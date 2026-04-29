@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drill Tatabahasa Masterclass (80 Soalan)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f3f4f6; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-option { transition: all 0.2s; }
+        .btn-option:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .correct { background-color: #10B981 !important; color: white !important; border-color: #10B981 !important; }
+        .wrong { background-color: #EF4444 !important; color: white !important; border-color: #EF4444 !important; animation: shake 0.4s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col items-center py-8 px-4 relative">
+
+    <!-- Admin Login Modal -->
+    <div id="admin-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in">
+        <div class="bg-white rounded-2xl p-6 max-w-xs w-full text-center shadow-2xl">
+            <div class="text-4xl mb-3">🕵️‍♂️</div>
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Super Admin</h3>
+            <input type="password" id="admin-pwd-input" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-center mb-4 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Kata Laluan" autocomplete="off">
+            <div class="flex gap-2">
+                <button onclick="closeAdminModal()" class="flex-1 bg-gray-200 text-gray-700 p-3 rounded-xl font-medium hover:bg-gray-300">Batal</button>
+                <button onclick="verifyAdmin()" class="flex-1 bg-purple-600 text-white p-3 rounded-xl font-medium hover:bg-purple-700">Sahkan</button>
+            </div>
+            <p id="admin-error" class="text-red-500 text-sm mt-3 font-medium hidden">Kata laluan tidak sah!</p>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="name-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 fade-in bg-gray-900/40 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center relative">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Tatabahasa 80 🔥</h2>
+            <p class="text-gray-500 mb-6 text-sm">Sila masukkan nama untuk mula (Data Direkodkan).</p>
+            <input type="text" id="student-name-input" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-lg text-center focus:ring-2 focus:ring-blue-500 transition-all mb-4" placeholder="Contoh: Ahmad Ali" autocomplete="off">
+            <button id="btn-start" class="w-full bg-blue-600 text-white px-8 py-4 rounded-xl font-medium opacity-50 cursor-not-allowed transition-all" disabled>Mula Ujian</button>
+            <div class="absolute bottom-3 right-4">
+                <span id="admin-trigger" onclick="showAdminModal()" class="cursor-pointer opacity-40 hover:opacity-100 text-sm transition-opacity" title="Admin Login">🔒</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl w-full">
+        <!-- Header -->
+        <div class="mb-6 fade-in flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Masterclass Tatabahasa</h1>
+                <p class="text-blue-600 font-medium mt-1 text-sm uppercase tracking-wide" id="section-title">Bahagian 1: Objektif</p>
+            </div>
+            <div class="text-right">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Pelajar</span>
+                <span id="display-student-name" class="font-bold text-gray-700">...</span>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex items-center gap-4 fade-in">
+            <div class="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden relative">
+                <div id="progress-bar" class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="text-sm font-bold text-gray-600 min-w-[100px] text-right">
+                <span id="question-counter">0 / 80</span>
+                <button id="btn-admin-bypass" class="hidden ml-2 bg-purple-100 text-purple-700 px-2 py-1 rounded text-[10px] uppercase border border-purple-300 hover:bg-purple-200">Skip >></button>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div id="card-container" class="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8 md:p-10 min-h-[400px] flex flex-col relative fade-in">
+            
+            <!-- VISUAL STIMULUS (For Bina Ayat) -->
+            <div id="visual-stimulus" class="hidden mb-6 w-full h-48 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative group">
+                <img id="stimulus-img" src="" alt="Stimulus" class="w-full h-full object-cover" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'100%\'><rect width=\'100%\' height=\'100%\' fill=\'%23e5e7eb\'/><text x=\'50%\' y=\'50%\' fill=\'%239ca3af\' text-anchor=\'middle\' dy=\'.3em\' font-family=\'sans-serif\' font-size=\'14\'>Gambar tidak dijumpai. Teruskan bina ayat.</text></svg>'">
+                <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center transition-all">
+                    <p class="text-white font-bold tracking-wider uppercase text-sm">See • Think • Wonder</p>
+                </div>
+            </div>
+
+            <h2 id="question-text" class="text-2xl font-semibold leading-relaxed mb-8 text-gray-800">Loading...</h2>
+            
+            <!-- Format 1: Objektif -->
+            <div id="options-area" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden"></div>
+
+            <!-- Format 2: Subjektif Input -->
+            <div id="subjective-area" class="hidden w-full">
+                <input type="text" id="subj-input" class="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-4 text-xl font-medium focus:outline-none focus:border-blue-500 transition-colors mb-4" placeholder="Taip jawapan anda di sini..." autocomplete="off">
+                <button id="btn-check-subj" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors">Semak Jawapan</button>
+            </div>
+
+            <!-- Format 3: Bina Ayat Textarea -->
+            <div id="bina-ayat-area" class="hidden w-full">
+                <textarea id="bina-input" class="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-4 text-lg focus:outline-none focus:border-blue-500 transition-colors resize-none mb-4" rows="4" placeholder="Bina satu ayat lengkap... (Minimum 4 patah perkataan)"></textarea>
+                <button id="btn-next-bina" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-lg opacity-50 cursor-not-allowed transition-all" disabled>Hantar & Seterusnya</button>
+            </div>
+
+            <!-- Correction Feedback -->
+            <div id="correction-area" class="hidden mt-6 bg-red-50 border border-red-200 rounded-xl p-6 fade-in">
+                <p class="text-red-600 font-bold mb-2 flex items-center gap-2">⚠️ Kurang Tepat!</p>
+                <p class="text-gray-800 mb-4">Jawapan yang betul: <span id="correct-answer-text" class="font-extrabold text-green-700 bg-green-100 px-3 py-1 rounded"></span></p>
+                <p class="text-sm text-gray-500 mb-2 font-medium">Sila taip semula jawapan yang betul untuk meneruskan:</p>
+                <input type="text" id="correction-input" class="w-full bg-white border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-green-500 font-bold text-green-800" placeholder="Taip jawapan di atas..." autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Completion Screen -->
+        <div id="completion-area" class="hidden text-center fade-in bg-white p-12 rounded-[2rem] shadow-sm mt-8 border border-gray-100">
+            <div class="text-7xl mb-6">🏆</div>
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Misi Selesai!</h2>
+            <p class="text-gray-600 mb-8 text-lg">Hebat <span id="finish-student-name" class="font-bold text-blue-600"></span>! Anda berjaya menjawab kesemua 80 soalan tatabahasa.</p>
+            <button onclick="location.reload()" class="bg-gray-900 text-white px-8 py-4 rounded-full font-bold hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">Ulang Latihan</button>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2R3m8Z4kS1DAvzOKNCYQlixSTajG0WCdDeNzr1Iio3A6iQKsjcwDusW-LguFLAM-91w/exec'; 
+
+        // --- DATA BUNDLE (80 SOALAN) ---
+        // Format Obj: [Soalan, [Pilihan], IndexJawapan]
+        const qObjektif = [
+            // Penjodoh Bilangan
+            ["Pak Cik Rosli membeli tiga ___ pisang di pasar.", ["biji", "sikat", "tandan", "buah"], 1],
+            ["Abang memotong daging menggunakan se___ pisau yang tajam.", ["batang", "bilah", "keping", "pucuk"], 1],
+            ["Siti menjumpai se___ dompet di kantin sekolah.", ["buah", "biji", "keping", "bentuk"], 0],
+            ["Ayah menghisap se___ rokok di luar rumah.", ["batang", "puntung", "kotak", "urat"], 0],
+            ["Puan Aisyah memakai se___ cincin emas di jarinya.", ["bentuk", "utas", "pasang", "biji"], 0],
+            // Kata Hubung
+            ["Kamal ___ adiknya sedang bermain bola di padang.", ["atau", "dan", "kerana", "sambil"], 1],
+            ["Dia tidak hadir ke sekolah ___ demam panas.", ["supaya", "tetapi", "kerana", "lalu"], 2],
+            ["Kamu mahu minum air teh ___ air kopi?", ["dan", "serta", "atau", "malahan"], 2],
+            ["Aminah menyanyi ___ menyapu sampah di halaman rumah.", ["sambil", "lalu", "untuk", "agar"], 0],
+            ["Baju itu cantik ___ harganya sangat mahal.", ["maka", "tetapi", "sambil", "kerana"], 1],
+            // Kata Bantu
+            ["Hujan lebat ___ turun sejak awal pagi tadi.", ["masih", "belum", "akan", "pernah"], 0],
+            ["Kami ___ bertolak ke kampung pada hari esok.", ["sudah", "telah", "akan", "pernah"], 2],
+            ["Kerja sekolah Matematik itu ___ disiapkan oleh Ali.", ["belum", "akan", "masih", "sedang"], 0],
+            ["Cikgu Salmah ___ mengajar subjek Sains di Makmal 1.", ["sedang", "akan", "pernah", "telah"], 0],
+            ["Adik ___ tidur nyenyak di dalam buaiannya.", ["akan", "belum", "masih", "pernah"], 2],
+            // Kata Kerja
+            ["Ibu sedang ___ sayur-sayuran di dapur.", ["memotong", "menendang", "melukis", "mengayuh"], 0],
+            ["Murid-murid ___ lagu kebangsaan semasa perhimpunan.", ["membaca", "menyanyi", "menulis", "mendengar"], 1],
+            ["Pekerja itu ___ sampah ke dalam tong kitar semula.", ["mengutip", "membuang", "menyapu", "menarik"], 1],
+            ["Ayah ___ kereta dengan berhati-hati ketika hujan.", ["menunggang", "memandu", "membawa", "menarik"], 1],
+            ["Kakak ___ baju yang telah kering di ampaian.", ["mencuci", "menjemur", "melipat", "membasuh"], 2],
+            // Kata Adjektif
+            ["Rumah banglo di atas bukit itu sangat ___.", ["besar", "bising", "laju", "pantas"], 0],
+            ["Air sungai di kampung itu sungguh ___ dan jernih.", ["panas", "kotor", "sejuk", "keruh"], 2],
+            ["Budak lelaki yang ___ itu selalu mendapat tempat pertama.", ["malas", "jahat", "pandai", "lemah"], 2],
+            ["Sup ayam yang dimasak oleh nenek sangat ___.", ["pahit", "masin", "sedap", "tawar"], 2],
+            ["Kereta api elektrik bergerak dengan sangat ___.", ["perlahan", "lemah", "laju", "lembut"], 2],
+            // Kata Ganti Nama Diri
+            ["\"___ akan pergi ke perpustakaan petang ini,\" kata Ali dan Abu.", ["Mereka", "Kami", "Kamu", "Dia"], 1],
+            ["Sultan Mansur Syah merupakan raja yang adil. ___ amat disayangi rakyat.", ["Baginda", "Beliau", "Beta", "Dia"], 0],
+            ["\"Jemputlah makan kuih ini,\" kata Puan Ani kepada tetamu-___.", ["nya", "mu", "ku", "mereka"], 0],
+            ["Cikgu Ahmad ialah guru disiplin. ___ sangat tegas di sekolah.", ["Dia", "Beliau", "Mereka", "Kami"], 1],
+            ["Pencuri itu telah ditangkap. ___ dibawa ke balai polis.", ["Dia", "Beliau", "Kami", "Kamu"], 0]
+        ];
+
+        // Format Subj: [Soalan dengan ___, Jawapan Tepat (akan dicheck case-insensitive)]
+        const qSubjektif = [
+            // Penjodoh Bilangan
+            ["Pak Abu mempunyai sepuluh ___ lembu peliharaan.", "ekor"],
+            ["Kakak memakai se___ rantai leher mutiara.", "utas"],
+            ["Pelukis itu menggunakan se___ berus untuk mewarna.", "batang"],
+            ["Sila masukkan tiga ___ ais ke dalam minuman ini.", "ketul"],
+            ["Ayah membeli dua ___ tikar mengkuang di bazar.", "bidang"],
+            // Kata Hubung
+            ["Ali tersadung batu ___ jatuh ke dalam lopak air.", "lalu"],
+            ["Belajar rajin-rajin ___ kamu berjaya dalam peperiksaan.", "agar"],
+            ["Bukan sahaja abangnya pandai, ___ adiknya juga cerdik.", "malahan"],
+            ["Dia menangis ___ mengenangkan nasib malangnya.", "sambil"], // atau apabila
+            ["Harga makanan di sini murah ___ sangat sedap.", "serta"], // atau tetapi
+            // Kata Bantu
+            ["Saya ___ pernah sampai ke negara Jepun sebelum ini.", "belum"],
+            ["Mereka ___ siap mengemas khemah walaupun hari sudah lewat.", "masih"],
+            ["Perlawanan bola sepak itu ___ bermula pada pukul 8 malam.", "akan"],
+            ["Surat rasmi itu ___ dihantar semalam.", "telah"], // atau sudah
+            ["Pesakit itu ___ dirawat oleh doktor di wad kecemasan.", "sedang"],
+            // Kata Kerja
+            ["Kucing itu sedang ___ seekor tikus di lorong gelap.", "mengejar"],
+            ["Nelayan itu pergi ke laut untuk ___ ikan.", "menangkap"],
+            ["Kami bekerjasama ___ longkang yang tersumbat itu.", "membersihkan"],
+            ["Pelayan restoran itu ___ makanan kepada pelanggan.", "menghidangkan"],
+            ["Ibu ___ lantai ruang tamu menggunakan mop.", "mengelap"],
+            // Kata Adjektif
+            ["Suasana di pasar raya itu sangat ___ pada hujung minggu.", "bising"], // atau riuh
+            ["Budak yang ___ itu sering ponteng sekolah.", "nakal"],
+            ["Pokok kelapa di tepi pantai itu sangat ___.", "tinggi"],
+            ["Ubat demam yang diberikan oleh doktor itu berasa ___.", "pahit"],
+            ["Pisau yang ___ itu digunakan untuk melapah daging.", "tajam"],
+            // Kata Ganti Nama Diri
+            ["\"___ menjunjung perintah, Tuanku,\" sembah Laksamana Hang Tuah.", "Patik"],
+            ["Cikgu Sarah sangat prihatin. ___ sering membantu murid yang lemah.", "Beliau"],
+            ["Kucing peliharaan adik sangat comel. ___ suka bermain bola benang.", "Ia"],
+            ["\"Ampun Tuanku, ___ datang membawa perkhabaran,\" kata pengawal itu.", "patik"],
+            ["\"Jika ___ ada masalah, tanyalah cikgu,\" pesan Cikgu Tan kepada murid-muridnya.", "kamu"]
+        ];
+
+        // Format Bina Ayat: [Perkataan, Folder Imej]
+        const qBinaAyat = [
+            ["Membeli-belah", "pasar-malam.jpg"],
+            ["Ramai", "pasar-malam.jpg"],
+            ["Gembira", "pasar-malam.jpg"],
+            ["Makanan", "pasar-malam.jpg"],
+            ["Bercahaya", "pasar-malam.jpg"],
+
+            ["Bergotong-royong", "gotong-royong.jpg"],
+            ["Membersihkan", "gotong-royong.jpg"],
+            ["Bekerjasama", "gotong-royong.jpg"],
+            ["Sampah", "gotong-royong.jpg"],
+            ["Ceria", "gotong-royong.jpg"],
+
+            ["Bersenam", "bersenam-taman.jpg"],
+            ["Kesihatan", "bersenam-taman.jpg"],
+            ["Segar", "bersenam-taman.jpg"],
+            ["Berjoging", "bersenam-taman.jpg"],
+            ["Keluarga", "bersenam-taman.jpg"],
+
+            ["Fokus", "suasana-kelas.jpg"],
+            ["Mengajar", "suasana-kelas.jpg"],
+            ["Papan putih", "suasana-kelas.jpg"],
+            ["Belajar", "suasana-kelas.jpg"],
+            ["Cemerlang", "suasana-kelas.jpg"]
+        ];
+
+        // -- STATE MANAGEMENT --
+        let currentIndex = 0;
+        const TOTAL_QUESTIONS = 80;
+        let studentName = "";
+        let isAdmin = false;
+
+        // DOM Elements
+        const elNameInput = document.getElementById('student-name-input');
+        const elBtnStart = document.getElementById('btn-start');
+        const elDisplayName = document.getElementById('display-student-name');
+        const elNameOverlay = document.getElementById('name-overlay');
+        const elAdminModal = document.getElementById('admin-modal');
+        const elAdminPwdInput = document.getElementById('admin-pwd-input');
+        
+        const elSectionTitle = document.getElementById('section-title');
+        const elProgressBar = document.getElementById('progress-bar');
+        const elQuestionCounter = document.getElementById('question-counter');
+        const elQuestionText = document.getElementById('question-text');
+        
+        const elOptionsArea = document.getElementById('options-area');
+        const elSubjectiveArea = document.getElementById('subjective-area');
+        const elBinaAyatArea = document.getElementById('bina-ayat-area');
+        const elVisualStimulus = document.getElementById('visual-stimulus');
+        const elStimulusImg = document.getElementById('stimulus-img');
+        
+        const elSubjInput = document.getElementById('subj-input');
+        const elBtnCheckSubj = document.getElementById('btn-check-subj');
+        
+        const elBinaInput = document.getElementById('bina-input');
+        const elBtnNextBina = document.getElementById('btn-next-bina');
+        
+        const elCorrectionArea = document.getElementById('correction-area');
+        const elCorrectionInput = document.getElementById('correction-input');
+        const elCorrectAnswerText = document.getElementById('correct-answer-text');
+
+        // Logic Modal Nama
+        elNameInput.addEventListener('input', () => {
+            if (elNameInput.value.trim().length >= 3) {
+                elBtnStart.disabled = false;
+                elBtnStart.classList.remove('opacity-50', 'cursor-not-allowed');
+                elBtnStart.classList.add('hover:bg-blue-700', 'shadow-md');
+            } else {
+                elBtnStart.disabled = true;
+                elBtnStart.classList.add('opacity-50', 'cursor-not-allowed');
+                elBtnStart.classList.remove('hover:bg-blue-700', 'shadow-md');
+            }
+        });
+
+        // Admin Auth
+        function showAdminModal() { elAdminModal.classList.remove('hidden'); elAdminPwdInput.value=''; setTimeout(()=>elAdminPwdInput.focus(), 100); }
+        function closeAdminModal() { elAdminModal.classList.add('hidden'); }
+        function verifyAdmin() {
+            if(elAdminPwdInput.value === "4321") {
+                isAdmin = true; closeAdminModal();
+                document.getElementById('admin-trigger').innerText = '🔓 Admin Mode Aktif';
+            } else {
+                document.getElementById('admin-error').classList.remove('hidden');
+            }
+        }
+        document.addEventListener('keydown', (e) => { if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') showAdminModal(); });
+
+        elBtnStart.addEventListener('click', () => {
+            studentName = elNameInput.value.trim().toUpperCase();
+            if (isAdmin && !studentName.includes("[ADMIN]")) studentName = "[ADMIN] " + studentName;
+            elDisplayName.innerText = studentName;
+            document.getElementById('finish-student-name').innerText = studentName;
+            elNameOverlay.classList.add('hidden');
+            sendDataToSheets("Sedang Menjawab...");
+            loadQuestion();
+        });
+
+        function sendDataToSheets(status) {
+            if (!SCRIPT_URL) return; 
+            fetch(SCRIPT_URL, {
+                method: 'POST', mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nama: studentName, status: status })
+            }).catch(err => console.log('Error logging:', err));
+        }
+
+        // --- MAIN RENDER LOGIC ---
+        function loadQuestion() {
+            if (currentIndex >= TOTAL_QUESTIONS) {
+                document.getElementById('card-container').classList.add('hidden');
+                document.getElementById('completion-area').classList.remove('hidden');
+                sendDataToSheets("Selesai 80 Soalan");
+                return;
+            }
+
+            // Reset all areas
+            elOptionsArea.classList.add('hidden');
+            elSubjectiveArea.classList.add('hidden');
+            elBinaAyatArea.classList.add('hidden');
+            elCorrectionArea.classList.add('hidden');
+            elVisualStimulus.classList.add('hidden');
+            
+            elQuestionText.classList.remove('fade-in'); void elQuestionText.offsetWidth; elQuestionText.classList.add('fade-in');
+            
+            // Progress Math
+            elQuestionCounter.innerText = `${currentIndex + 1} / 80`;
+            elProgressBar.style.width = `${((currentIndex) / 80) * 100}%`;
+            if (isAdmin) document.getElementById('btn-admin-bypass').classList.remove('hidden');
+
+            if (currentIndex < 30) {
+                // BAHAGIAN 1: OBJEKTIF (0 - 29)
+                elSectionTitle.innerText = "Bahagian 1: Tatabahasa Objektif (Soalan 1-30)";
+                const qData = qObjektif[currentIndex];
+                elQuestionText.innerHTML = qData[0].replace('___', '<span class="text-blue-600 font-bold border-b-2 border-blue-600 px-4">___</span>');
+                
+                elOptionsArea.innerHTML = '';
+                qData[1].forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full border-2 border-gray-200 rounded-xl py-4 px-6 text-left text-lg font-medium text-gray-700 bg-white hover:border-blue-500 transition-all';
+                    btn.innerText = opt;
+                    btn.onclick = () => processObjektif(idx, qData[2], btn, qData[1][qData[2]]);
+                    elOptionsArea.appendChild(btn);
+                });
+                elOptionsArea.classList.remove('hidden');
+
+            } else if (currentIndex < 60) {
+                // BAHAGIAN 2: SUBJEKTIF (30 - 59)
+                elSectionTitle.innerText = "Bahagian 2: Isi Tempat Kosong (Soalan 31-60)";
+                const qData = qSubjektif[currentIndex - 30];
+                elQuestionText.innerHTML = qData[0].replace('___', '<span class="text-blue-600 font-bold border-b-2 border-blue-600 px-4">___</span>');
+                
+                elSubjInput.value = '';
+                elSubjInput.classList.remove('border-red-500', 'border-green-500', 'bg-red-50');
+                elSubjectiveArea.classList.remove('hidden');
+                setTimeout(() => elSubjInput.focus(), 100);
+
+            } else {
+                // BAHAGIAN 3: BINA AYAT (60 - 79)
+                elSectionTitle.innerText = "Bahagian 3: Bina Ayat (Soalan 61-80)";
+                const qData = qBinaAyat[currentIndex - 60];
+                
+                // Visible Thinking Element
+                elStimulusImg.src = qData[1];
+                elVisualStimulus.classList.remove('hidden');
+
+                elQuestionText.innerHTML = `<span class="text-gray-500 text-lg font-normal block mb-2">Perhatikan gambar dan bina satu ayat menggunakan perkataan:</span> <span class="text-blue-600 text-3xl">"${qData[0]}"</span>`;
+                
+                elBinaInput.value = '';
+                checkBinaLength();
+                elBinaAyatArea.classList.remove('hidden');
+                setTimeout(() => elBinaInput.focus(), 100);
+            }
+        }
+
+        // --- CHECKING LOGIC ---
+
+        function processObjektif(selectedIdx, correctIdx, btnEl, correctStr) {
+            const allBtns = elOptionsArea.querySelectorAll('button');
+            allBtns.forEach(b => b.disabled = true); 
+
+            if (selectedIdx === correctIdx) {
+                btnEl.classList.add('correct');
+                setTimeout(() => { currentIndex++; loadQuestion(); }, 700);
+            } else {
+                btnEl.classList.add('wrong');
+                setTimeout(() => {
+                    elOptionsArea.classList.add('hidden');
+                    forceCorrection(correctStr);
+                }, 800);
+            }
+        }
+
+        elBtnCheckSubj.onclick = () => {
+            const qData = qSubjektif[currentIndex - 30];
+            const correctAnswers = qData[1].split(' atau '); // Handle multiple valid answers if any
+            const userAns = elSubjInput.value.trim().toLowerCase();
+            
+            let isCorrect = false;
+            correctAnswers.forEach(ans => {
+                if(userAns === ans.toLowerCase()) isCorrect = true;
+            });
+
+            if (isCorrect) {
+                elSubjInput.classList.add('border-green-500', 'bg-green-50');
+                setTimeout(() => { currentIndex++; loadQuestion(); }, 700);
+            } else {
+                elSubjInput.classList.add('border-red-500', 'bg-red-50');
+                setTimeout(() => {
+                    elSubjectiveArea.classList.add('hidden');
+                    forceCorrection(correctAnswers[0]);
+                }, 800);
+            }
+        };
+
+        // Allow 'Enter' key for Subjective
+        elSubjInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') elBtnCheckSubj.click(); });
+
+        // Stretch It: Paksa Taip Semula
+        function forceCorrection(correctStr) {
+            elCorrectionArea.classList.remove('hidden');
+            elCorrectAnswerText.innerText = correctStr.toUpperCase();
+            elCorrectionInput.value = '';
+            elCorrectionInput.focus();
+            
+            elCorrectionInput.oninput = () => {
+                if(elCorrectionInput.value.trim().toLowerCase() === correctStr.toLowerCase()) {
+                    elCorrectionInput.classList.add('border-green-500', 'bg-green-50');
+                    setTimeout(() => {
+                        elCorrectionInput.classList.remove('border-green-500', 'bg-green-50');
+                        currentIndex++;
+                        loadQuestion();
+                    }, 500);
+                }
+            };
+        }
+
+        // Bina Ayat Logic (Min 4 words)
+        function checkBinaLength() {
+            const text = elBinaInput.value.trim();
+            const wordCount = text === "" ? 0 : text.split(/\s+/).length;
+            
+            if (wordCount >= 4) {
+                elBtnNextBina.disabled = false;
+                elBtnNextBina.classList.remove('opacity-50', 'cursor-not-allowed');
+                elBtnNextBina.classList.add('hover:bg-blue-700');
+            } else {
+                elBtnNextBina.disabled = true;
+                elBtnNextBina.classList.add('opacity-50', 'cursor-not-allowed');
+                elBtnNextBina.classList.remove('hover:bg-blue-700');
+            }
+        }
+        elBinaInput.addEventListener('input', checkBinaLength);
+        
+        elBtnNextBina.addEventListener('click', () => {
+            if(!elBtnNextBina.disabled) { currentIndex++; loadQuestion(); }
+        });
+
+        // Admin Bypass
+        document.getElementById('btn-admin-bypass').addEventListener('click', () => {
+            if (!isAdmin) return;
+            currentIndex++; loadQuestion();
+        });
+
+    </script>
+</body>
+</html>
